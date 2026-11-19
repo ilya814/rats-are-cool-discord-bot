@@ -2,80 +2,578 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rats are cool studio's | Dashboard</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: #101018;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 520px;
-            padding: 40px 25px;
-            background: #1c1c29;
-            border: 1px solid #343448;
-            border-radius: 18px;
-        }
-
-        h1 {
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        p {
-            color: #aaaabd;
-            line-height: 1.6;
-        }
-
-        .button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 13px 25px;
-            background: #7138c8;
-            color: white;
-            text-decoration: none;
-            border-radius: 9px;
-            font-weight: bold;
-        }
-
-        .button:hover {
-            background: #8955df;
-        }
-
-        .status {
-            margin-top: 25px;
-            font-size: 13px;
-            color: #88889b;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rats are cool studio's | Dashboard</title>
+<style>
+:root {
+  --bg:#101016;
+  --sidebar:#15151f;
+  --panel:#1c1c29;
+  --panel2:#242435;
+  --border:#303044;
+  --purple:#8755df;
+  --purple-dark:#6f3cc4;
+  --text:#f5f3fa;
+  --muted:#a3a0b4;
+  --green:#39c98a;
+  --orange:#e6b66b;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+button,select,input,textarea {font:inherit}
+button {cursor:pointer}
+.layout {display:flex;min-height:100vh}
+.sidebar {
+  width:245px;
+  position:fixed;
+  inset:0 auto 0 0;
+  background:var(--sidebar);
+  border-right:1px solid var(--border);
+  padding:22px 15px;
+  overflow-y:auto;
+  z-index:5;
+}
+.brand {
+  display:flex;
+  gap:11px;
+  align-items:center;
+  padding:5px 8px 22px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:17px;
+}
+.logo {
+  width:40px;height:40px;
+  display:grid;place-items:center;
+  border-radius:12px;
+  background:linear-gradient(135deg,#a477f5,#6335b3);
+  font-size:22px;
+}
+.brand strong {font-size:13px}
+.brand small {display:block;color:var(--muted);margin-top:5px}
+.nav-label {
+  color:#77758c;
+  font-size:10px;
+  font-weight:bold;
+  letter-spacing:1.3px;
+  padding:13px 10px 7px;
+}
+.nav {
+  display:block;
+  width:100%;
+  text-align:left;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  padding:11px 12px;
+  border-radius:9px;
+  margin:2px 0;
+  font-size:13px;
+}
+.nav:hover {background:var(--panel2);color:white}
+.nav.active {background:#352650;color:#d0b6ff}
+.nav span {display:inline-block;width:25px}
+.sidebar-footer {
+  border-top:1px solid var(--border);
+  margin-top:20px;
+  padding:15px 8px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.8;
+}
+.main {margin-left:245px;width:calc(100% - 245px)}
+.topbar {
+  height:68px;
+  background:#12121a;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 30px;
+}
+.topbar small {color:var(--muted)}
+.profile {
+  padding:9px 13px;
+  border-radius:9px;
+  border:1px solid var(--border);
+  background:var(--panel);
+  font-size:12px;
+}
+.content {padding:30px;max-width:1250px;margin:auto}
+.page {display:none}
+.page.active {display:block}
+.heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:15px;
+  margin-bottom:24px;
+}
+h1 {font-size:25px;margin:0 0 8px}
+h2 {font-size:16px;margin:0 0 16px}
+h3 {font-size:14px;margin:0 0 8px}
+.subtitle {color:var(--muted);font-size:13px;line-height:1.6}
+.grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+.card {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:13px;
+  padding:20px;
+  margin-bottom:16px;
+  min-width:0;
+}
+.stat {
+  color:var(--muted);
+  font-size:12px;
+  margin-bottom:12px;
+}
+.stat-value {font-size:21px;font-weight:bold}
+.status {
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  font-size:10px;
+  background:#3b3020;
+  color:#f0c77e;
+}
+.status.purple {background:#382953;color:#c8a8ff}
+.status.green {background:#203b31;color:#7ce0b0}
+.status.gray {background:#30303e;color:#b8b6c7}
+.button {
+  border:0;
+  padding:11px 15px;
+  border-radius:8px;
+  background:var(--purple-dark);
+  color:white;
+  font-size:12px;
+  font-weight:bold;
+}
+.button:hover {background:var(--purple)}
+.button.secondary {
+  background:var(--panel2);
+  border:1px solid var(--border);
+}
+.button:disabled {opacity:.45;cursor:not-allowed}
+.field {margin:17px 0}
+.field label {
+  display:block;
+  margin-bottom:8px;
+  font-size:12px;
+  color:#dedbea;
+}
+.field input,.field textarea,.field select {
+  display:block;
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:#13131d;
+  color:white;
+  outline:none;
+}
+.field input:focus,.field textarea:focus,.field select:focus {
+  border-color:var(--purple);
+}
+.field select:disabled {opacity:.55;cursor:not-allowed}
+.field select option {background:var(--panel)}
+.field textarea {min-height:100px;resize:vertical}
+.help {font-size:11px;color:var(--muted);margin-top:7px;line-height:1.5}
+.notice {
+  background:#302746;
+  border:1px solid #4c386c;
+  border-radius:9px;
+  padding:13px;
+  color:#d5c0ff;
+  font-size:12px;
+  line-height:1.6;
+  margin-bottom:17px;
+}
+.empty {
+  text-align:center;
+  padding:27px 12px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.8;
+}
+.empty strong {display:block;color:#dedbea;font-size:14px;margin-bottom:5px}
+.list-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 0;
+  border-bottom:1px solid var(--border);
+}
+.list-row:last-child {border-bottom:0}
+.list-row p {margin:5px 0 0;color:var(--muted);font-size:11px}
+.switch {
+  width:42px;height:23px;
+  border:0;border-radius:20px;
+  background:#49495a;padding:3px;
+  flex-shrink:0;
+}
+.switch:after {
+  content:"";
+  display:block;
+  height:17px;width:17px;
+  background:white;border-radius:50%;
+  transition:.2s;
+}
+.switch.on {background:var(--purple)}
+.switch.on:after {transform:translateX(19px)}
+.mobile-menu {display:none}
+@media(max-width:850px) {
+  .grid {grid-template-columns:1fr}
+}
+@media(max-width:650px) {
+  .sidebar {display:none;width:250px;box-shadow:10px 0 30px #0009}
+  .sidebar.open {display:block}
+  .main {margin:0;width:100%}
+  .content {padding:20px 15px}
+  .topbar {padding:0 15px}
+  .mobile-menu {display:inline-block}
+  .heading {flex-direction:column}
+}
+</style>
 </head>
+
 <body>
-    <main class="container">
-        <h1>Rats are cool studio's</h1>
-        <p>Discord Bot Dashboard</p>
+<div class="layout">
 
-        <p>
-            Welcome to your private management dashboard.
-            Manage your community and control your custom Discord bot.
-        </p>
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="logo">🐀</div>
+    <div>
+      <strong>Rats are cool studio's</strong>
+      <small>Bot Dashboard</small>
+    </div>
+  </div>
 
-        <a class="button" href="#">Dashboard coming soon</a>
+  <div class="nav-label">MAIN</div>
+  <button class="nav active" data-page="overview"><span>▦</span>Overview</button>
 
-        <div class="status">System is under development</div>
-    </main>
+  <div class="nav-label">BOT MANAGEMENT</div>
+  <button class="nav" data-page="welcome"><span>👋</span>Welcome</button>
+  <button class="nav" data-page="verification"><span>🔐</span>Verification</button>
+  <button class="nav" data-page="tickets"><span>🎫</span>Tickets</button>
+  <button class="nav" data-page="xp"><span>🏆</span>XP & Levels</button>
+  <button class="nav" data-page="moderation"><span>🛡️</span>Moderation</button>
+  <button class="nav" data-page="logs"><span>📋</span>Logs</button>
+
+  <div class="nav-label">SYSTEM</div>
+  <button class="nav" data-page="settings"><span>⚙️</span>Settings</button>
+
+  <div class="sidebar-footer">
+    <span class="status green">Website interface</span>
+    <p>Discord: Not connected</p>
+    Backend: Not connected
+  </div>
+</aside>
+
+<main class="main">
+<header class="topbar">
+  <div>
+    <button class="button secondary mobile-menu" id="menuButton">☰</button>
+    <small>Dashboard / <span id="breadcrumb">Overview</span></small>
+  </div>
+  <div class="profile">Discord account: Not connected</div>
+</header>
+
+<div class="content">
+
+<!-- OVERVIEW -->
+<section class="page active" id="page-overview">
+  <div class="heading">
+    <div>
+      <h1>Overview</h1>
+      <div class="subtitle">Manage your Discord bot and server.</div>
+    </div>
+    <span class="status purple">Development</span>
+  </div>
+
+  <div class="card">
+    <h2>Your Discord server</h2>
+    <div class="field">
+      <label>Select a server</label>
+      <select id="serverSelect" disabled>
+        <option value="">Connect Discord to load your servers</option>
+      </select>
+      <div class="help">Your available servers will appear here after Discord is connected.</div>
+    </div>
+    <button class="button" id="inviteButton" disabled>Add to Discord</button>
+    <div class="help" id="inviteHelp">Discord application setup is required before this button can work.</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="stat">Bot status</div>
+      <div class="stat-value">Not connected</div>
+      <p class="subtitle">The bot has not been connected yet.</p>
+    </div>
+    <div class="card">
+      <div class="stat">Server members</div>
+      <div class="stat-value">—</div>
+      <p class="subtitle">Waiting for Discord connection.</p>
+    </div>
+    <div class="card">
+      <div class="stat">Open tickets</div>
+      <div class="stat-value">—</div>
+      <p class="subtitle">Ticket system not configured.</p>
+    </div>
+    <div class="card">
+      <div class="stat">Verified members</div>
+      <div class="stat-value">—</div>
+      <p class="subtitle">Verification not configured.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>System status</h2>
+    <div class="list-row"><div>Website interface</div><span class="status green">Ready</span></div>
+    <div class="list-row"><div>Discord connection</div><span class="status">Not connected</span></div>
+    <div class="list-row"><div>Backend</div><span class="status">Not connected</span></div>
+    <div class="list-row"><div>Database</div><span class="status">Not connected</span></div>
+    <div class="list-row"><div>Dashboard security</div><span class="status">Not configured</span></div>
+  </div>
+</section>
+
+<!-- WELCOME -->
+<section class="page" id="page-welcome">
+  <div class="heading">
+    <div><h1>Welcome</h1><div class="subtitle">Configure messages for new members.</div></div>
+    <span class="status">Not configured</span>
+  </div>
+  <div class="notice">Connect Discord and the backend before configuring real welcome messages.</div>
+  <div class="card">
+    <h2>Welcome settings</h2>
+    <div class="field">
+      <label>Welcome channel</label>
+      <select disabled><option>Connect Discord to load channels</option></select>
+    </div>
+    <div class="field">
+      <label>Welcome message</label>
+      <textarea disabled placeholder="Configure your welcome message after connecting Discord."></textarea>
+    </div>
+    <button class="button" disabled>Save settings</button>
+  </div>
+</section>
+
+<!-- VERIFICATION -->
+<section class="page" id="page-verification">
+  <div class="heading">
+    <div><h1>Verification</h1><div class="subtitle">Configure CAPTCHA and Roblox verification.</div></div>
+    <span class="status">Not configured</span>
+  </div>
+  <div class="notice">Your role and channel options will be loaded from the selected Discord server.</div>
+  <div class="card">
+    <h2>Verification settings</h2>
+    <div class="field">
+      <label>Verification channel</label>
+      <select disabled><option>Connect Discord to load channels</option></select>
+    </div>
+    <div class="field">
+      <label>Role after joining</label>
+      <select disabled><option>Connect Discord to load roles</option></select>
+    </div>
+    <div class="field">
+      <label>Role after CAPTCHA</label>
+      <select disabled><option>Connect Discord to load roles</option></select>
+    </div>
+    <div class="field">
+      <label>Role after Roblox verification</label>
+      <select disabled><option>Connect Discord to load roles</option></select>
+    </div>
+    <button class="button" disabled>Save settings</button>
+  </div>
+</section>
+
+<!-- TICKETS -->
+<section class="page" id="page-tickets">
+  <div class="heading">
+    <div><h1>Tickets</h1><div class="subtitle">Set up your support system.</div></div>
+    <span class="status">Not configured</span>
+  </div>
+  <div class="card">
+    <h2>Ticket settings</h2>
+    <div class="field">
+      <label>Ticket channel</label>
+      <select disabled><option>Connect Discord to load channels</option></select>
+    </div>
+    <div class="field">
+      <label>Ticket category</label>
+      <select disabled><option>Connect Discord to load categories</option></select>
+    </div>
+    <div class="field">
+      <label>Support role</label>
+      <select disabled><option>Connect Discord to load roles</option></select>
+    </div>
+    <div class="field">
+      <label>Ticket welcome message</label>
+      <textarea disabled placeholder="Configure your ticket message after connecting Discord."></textarea>
+    </div>
+    <button class="button" disabled>Save settings</button>
+  </div>
+</section>
+
+<!-- XP -->
+<section class="page" id="page-xp">
+  <div class="heading">
+    <div><h1>XP & Levels</h1><div class="subtitle">Manage XP and Crown ranks.</div></div>
+    <span class="status">Not configured</span>
+  </div>
+  <div class="card">
+    <h2>XP settings</h2>
+    <div class="field">
+      <label>XP announcement channel</label>
+      <select disabled><option>Connect Discord to load channels</option></select>
+    </div>
+    <div class="field">
+      <label>Minimum XP per message</label>
+      <input type="number" placeholder="Not configured" disabled>
+    </div>
+    <div class="field">
+      <label>Maximum XP per message</label>
+      <input type="number" placeholder="Not configured" disabled>
+    </div>
+    <div class="field">
+      <label>Cooldown in seconds</label>
+      <input type="number" placeholder="Not configured" disabled>
+    </div>
+    <button class="button" disabled>Save settings</button>
+  </div>
+</section>
+
+<!-- MODERATION -->
+<section class="page" id="page-moderation">
+  <div class="heading">
+    <div><h1>Moderation</h1><div class="subtitle">Configure server protection.</div></div>
+    <span class="status">Not configured</span>
+  </div>
+  <div class="card">
+    <h2>Moderation settings</h2>
+    <div class="field">
+      <label>Moderation log channel</label>
+      <select disabled><option>Connect Discord to load channels</option></select>
+    </div>
+    <div class="field">
+      <label>Moderator role</label>
+      <select disabled><option>Connect Discord to load roles</option></select>
+    </div>
+    <div class="list-row"><div>Anti-spam <p>Detect repeated messages.</p></div><button class="switch" disabled></button></div>
+    <div class="list-row"><div>Anti-raid <p>Protect against server raids.</p></div><button class="switch" disabled></button></div>
+    <div class="list-row"><div>Anti-link <p>Configure unwanted link filtering.</p></div><button class="switch" disabled></button></div>
+    <button class="button" disabled>Save settings</button>
+  </div>
+</section>
+
+<!-- LOGS -->
+<section class="page" id="page-logs">
+  <div class="heading">
+    <div><h1>Logs</h1><div class="subtitle">View activity from your bot.</div></div>
+    <span class="status">Not connected</span>
+  </div>
+  <div class="card">
+    <div class="empty">
+      <strong>No logs available</strong>
+      Bot activity will appear here after the backend is connected.
+    </div>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section class="page" id="page-settings">
+  <div class="heading">
+    <div><h1>Settings</h1><div class="subtitle">Configure your dashboard and connections.</div></div>
+  </div>
+  <div class="card">
+    <h2>Discord connection</h2>
+    <div class="list-row"><div>Discord OAuth</div><span class="status">Not connected</span></div>
+    <div class="list-row"><div>Bot application</div><span class="status">Not configured</span></div>
+    <div class="list-row"><div>Backend API</div><span class="status">Not connected</span></div>
+    <div class="list-row"><div>Database</div><span class="status">Not connected</span></div>
+  </div>
+  <div class="card">
+    <h2>Appearance</h2>
+    <div class="field">
+      <label>Accent color</label>
+      <select id="accent">
+        <option value="purple">Purple</option>
+        <option value="blue">Blue</option>
+        <option value="green">Green</option>
+      </select>
+    </div>
+    <button class="button" id="saveAppearance">Save appearance</button>
+  </div>
+</section>
+
+</div>
+</main>
+</div>
+
+<script>
+const navButtons = document.querySelectorAll(".nav[data-page]");
+const pages = document.querySelectorAll(".page");
+const breadcrumb = document.getElementById("breadcrumb");
+
+function showPage(name) {
+  pages.forEach(page => {
+    page.classList.toggle("active", page.id === "page-" + name);
+  });
+  navButtons.forEach(button => {
+    button.classList.toggle("active", button.dataset.page === name);
+  });
+  const active = document.querySelector(
+    '.nav[data-page="' + name + '"]'
+  );
+  breadcrumb.textContent = active
+    ? active.textContent.trim()
+    : name;
+  document.getElementById("sidebar").classList.remove("open");
+}
+
+navButtons.forEach(button => {
+  button.addEventListener("click", () => {
+    showPage(button.dataset.page);
+  });
+});
+
+document.getElementById("menuButton").addEventListener("click", () => {
+  document.getElementById("sidebar").classList.toggle("open");
+});
+
+document.getElementById("saveAppearance").addEventListener("click", () => {
+  const color = document.getElementById("accent").value;
+  const colors = {
+    purple:"#8755df",
+    blue:"#2878d0",
+    green:"#23965b"
+  };
+  document.documentElement.style.setProperty("--purple", colors[color]);
+  document.documentElement.style.setProperty("--purple-dark", colors[color]);
+  localStorage.setItem("ratsDashboardAccent", color);
+});
+
+const savedAccent = localStorage.getItem("ratsDashboardAccent");
+if (savedAccent) {
+  document.getElementById("accent").value = savedAccent;
+  const colors = {
+    purple:"#8755df",
+    blue:"#2878d0",
+    green:"#23965b"
+  };
+  const color = colors[savedAccent] || colors.purple;
+  document.documentElement.style.setProperty("--purple", color);
+  document.documentElement.style.setProperty("--purple-dark", color);
+}
+</script>
 </body>
 </html>
