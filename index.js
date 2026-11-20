@@ -2,6 +2,7 @@
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
+const crypto = require("crypto");
 const {
   Client,
   GatewayIntentBits,
@@ -17,6 +18,8 @@ const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 
 if (!DASHBOARD_PASSWORD || !SESSION_SECRET) {
   console.error("Missing DASHBOARD_PASSWORD or SESSION_SECRET.");
@@ -36,11 +39,31 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 12,
     },
   })
 );
+
+function requireDashboardLogin(req, res, next) {
+  if (!req.session.authenticated) {
+    return res.redirect("/login");
+  }
+  next();
+}
+
+function requireDiscordConfig(req, res, next) {
+  if (
+    !DISCORD_CLIENT_ID ||
+    !DISCORD_CLIENT_SECRET ||
+    !DISCORD_REDIRECT_URI
+  ) {
+    return res.status(500).json({
+      error: "Discord OAuth is not configured on the server.",
+    });
+  }
+  next();
+}
 
 const loginPage = (error = "") => `<!DOCTYPE html>
 <html lang="en">
@@ -146,23 +169,189 @@ app.post("/logout", (req, res, next) => {
   });
 });
 
-app.get("/", (req, res, next) => {
-  if (!req.session.authenticated) {
-    return res.redirect("/login");
+// Start Discord OAuth
+app.get(
+  "/auth/discord",
+  requireDashboardLogin,
+  requireDiscordConfig,
+  (req, res) => {
+    const state = crypto.randomBytes(32).toString("hex");
+    req.session.discordOAuthState = state;
+
+    const params = new URLSearchParams({
+      client_id: DISCORD_CLIENT_ID,
+      redirect_uri: DISCORD_REDIRECT_URI,
+      response_type: "code",
+      scope: "identify guilds",
+      state,
+    });
+
+    res.redirect(
+      `https://discord.com/oauth2/authorize?${params.toString()}`
+    );
+  }
+);
+
+// Discord OAuth callback
+app.get(
+  "/auth/discord/callback",
+  requireDashboardLogin,
+  requireDiscordConfig,
+  async (req, res) => {
+    try {
+      const { code, state, error } = req.query;
+
+      if (error) {
+        return res.redirect("/?discord_error=cancelled");
+      }
+
+      if (
+        typeof state !== "string" ||
+        !req.session.discordOAuthState ||
+        state !== req.session.discordOAuthState
+      ) {
+        return res.status(400).send("Invalid OAuth state. Please try again.");
+      }
+
+      delete req.session.discordOAuthState;
+
+      if (typeof code !== "string") {
+        return res.status(400).send("Discord did not return an authorization code.");
+      }
+
+      const tokenResponse = await fetch(
+        "https://discord.com/api/oauth2/token",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            client_id: DISCORD_CLIENT_ID,
+            client_secret: DISCORD_CLIENT_SECRET,
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: DISCORD_REDIRECT_URI,
+          }),
+        }
+      );
+
+      const tokens = await tokenResponse.json();
+
+      if (!tokenResponse.ok || !tokens.access_token) {
+        console.error("Discord token exchange failed:", tokens);
+        return res.status(502).send("Could not connect to Discord. Please try again.");
+      }
+
+      const userResponse = await fetch(
+        "https://discord.com/api/users/@me",
+        {
+          headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+          },
+        }
+      );
+
+      const user = await userResponse.json();
+
+      if (!userResponse.ok || !user.id) {
+        console.error("Discord user request failed:", user);
+        return res.status(502).send("Could not retrieve your Discord account.");
+      }
+
+      req.session.discord = {
+        id: user.id,
+        username: user.username,
+        global_name: user.global_name || user.username,
+        avatar: user.avatar || null,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token || null,
+        expiresAt: Date.now() + (tokens.expires_in || 0) * 1000,
+      };
+
+      req.session.save((saveError) => {
+        if (saveError) {
+          console.error("Could not save Discord session:", saveError);
+          return res.status(500).send("Could not save your Discord connection.");
+        }
+        res.redirect("/?discord_connected=1");
+      });
+    } catch (error) {
+      console.error("Discord OAuth callback error:", error);
+      res.status(500).send("Discord connection failed. Please try again.");
+    }
+  }
+);
+
+// Current connected Discord account
+app.get("/api/discord/me", requireDashboardLogin, (req, res) => {
+  if (!req.session.discord) {
+    return res.json({ connected: false });
   }
 
+  const { id, username, global_name, avatar } = req.session.discord;
+
+  res.json({
+    connected: true,
+    user: { id, username, global_name, avatar },
+  });
+});
+
+// Load servers available to the connected Discord account
+app.get("/api/discord/guilds", requireDashboardLogin, async (req, res) => {
+  if (!req.session.discord?.accessToken) {
+    return res.status(401).json({ error: "Discord is not connected." });
+  }
+
+  try {
+    const response = await fetch(
+      "https://discord.com/api/users/@me/guilds",
+      {
+        headers: {
+          Authorization: `Bearer ${req.session.discord.accessToken}`,
+        },
+      }
+    );
+
+    const guilds = await response.json();
+
+    if (!response.ok) {
+      console.error("Discord guild request failed:", guilds);
+      return res.status(response.status).json({
+        error: "Could not load Discord servers. Please reconnect Discord.",
+      });
+    }
+
+    res.json(
+      guilds.map((guild) => ({
+        id: guild.id,
+        name: guild.name,
+        icon: guild.icon,
+        owner: guild.owner,
+        permissions: guild.permissions,
+      }))
+    );
+  } catch (error) {
+    console.error("Discord guild loading error:", error);
+    res.status(500).json({ error: "Could not load Discord servers." });
+  }
+});
+
+// Disconnect Discord account
+app.post("/auth/discord/disconnect", requireDashboardLogin, (req, res) => {
+  delete req.session.discord;
+  delete req.session.discordOAuthState;
+  res.json({ success: true });
+});
+
+app.get("/", requireDashboardLogin, (req, res, next) => {
   res.sendFile(path.join(__dirname, "index.html"), (error) => {
     if (error) next(error);
   });
 });
 
-app.use((req, res, next) => {
-  if (!req.session.authenticated) {
-    return res.redirect("/login");
-  }
-  next();
-});
-
+// Protect the dashboard's static files
+app.use(requireDashboardLogin);
 app.use(express.static(__dirname));
 
 app.use((error, req, res, next) => {
@@ -220,4 +409,3 @@ async function startDiscordBot() {
 startDiscordBot().catch((error) => {
   console.error("Discord bot failed to start:", error);
 });
-
