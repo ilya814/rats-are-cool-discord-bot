@@ -578,6 +578,64 @@ if (savedAccent) {
   document.documentElement.style.setProperty("--purple", color);
   document.documentElement.style.setProperty("--purple-dark", color);
 }
+  // Discord account connection
+const discordAccount = document.getElementById("discordAccount");
+const discordConnect = document.getElementById("discordConnect");
+const discordDisconnect = document.getElementById("discordDisconnect");
+const serverSelect = document.getElementById("serverSelect");
+
+discordConnect.addEventListener("click", () => {
+  window.location.href = "/auth/discord";
+});
+
+discordDisconnect.addEventListener("click", async () => {
+  const response = await fetch("/auth/discord/disconnect", {
+    method: "POST"
+  });
+
+  if (response.ok) location.reload();
+});
+
+async function loadDiscordConnection() {
+  try {
+    const response = await fetch("/api/discord/me");
+    const data = await response.json();
+
+    if (!data.connected) return;
+
+    discordAccount.textContent =
+      "Discord: " + (data.user.global_name || data.user.username);
+
+    discordConnect.hidden = true;
+    discordDisconnect.hidden = false;
+
+    const guildResponse = await fetch("/api/discord/guilds");
+    const guilds = await guildResponse.json();
+
+    if (!guildResponse.ok || !Array.isArray(guilds)) {
+      throw new Error(guilds.error || "Could not load servers.");
+    }
+
+    serverSelect.innerHTML = "";
+
+    if (guilds.length === 0) {
+      serverSelect.add(new Option("No servers found", ""));
+      return;
+    }
+
+    serverSelect.add(new Option("Choose a server", ""));
+
+    guilds.forEach(guild => {
+      serverSelect.add(new Option(guild.name, guild.id));
+    });
+  } catch (error) {
+    console.error("Discord dashboard error:", error);
+    serverSelect.innerHTML = "";
+    serverSelect.add(new Option("Could not load servers", ""));
+  }
+}
+
+loadDiscordConnection();
 </script>
 </body>
 </html>
