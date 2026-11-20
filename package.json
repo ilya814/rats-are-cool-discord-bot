@@ -1,13 +1,14 @@
-
 {
   "name": "rats-are-cool-discord-bot",
   "version": "1.0.0",
-  "description": "Official Discord bot for Rats are cool studio's",
+  "description": "Official Discord bot and dashboard",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.19.3"
+    "discord.js": "^14.19.3",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2"
   }
 }
