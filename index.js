@@ -336,13 +336,26 @@ app.get("/api/discord/guilds", requireDashboardLogin, async (req, res) => {
       });
     }
 
+        const manageableGuilds = guilds.filter((guild) => {
+      const permissions = BigInt(guild.permissions || "0");
+
+      const canManageGuild =
+        guild.owner ||
+        (permissions & 0x20n) === 0x20n ||
+        (permissions & 0x8n) === 0x8n;
+
+      const botIsInGuild = Boolean(
+        discordBotClient?.guilds.cache.has(guild.id)
+      );
+
+      return canManageGuild && botIsInGuild;
+    });
+
     res.json(
-      guilds.map((guild) => ({
+      manageableGuilds.map((guild) => ({
         id: guild.id,
         name: guild.name,
         icon: guild.icon,
-        owner: guild.owner,
-        permissions: guild.permissions,
       }))
     );
   } catch (error) {
