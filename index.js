@@ -350,7 +350,52 @@ app.get("/api/discord/guilds", requireDashboardLogin, async (req, res) => {
 
       return canManageGuild && botIsInGuild;
     });
+// Load channels from the selected Discord server only
+app.get(
+  "/api/discord/guilds/:guildId/channels",
+  requireDashboardLogin,
+  async (req, res) => {
+    try {
+      if (!discordBotClient?.isReady()) {
+        return res.status(503).json({
+          error: "The Discord bot is not online.",
+        });
+      }
 
+      const guild = discordBotClient.guilds.cache.get(req.params.guildId);
+
+      if (!guild) {
+        return res.status(404).json({
+          error: "The bot is not in this Discord server.",
+        });
+      }
+
+      const channels = await guild.channels.fetch();
+
+      const availableChannels = channels
+        .filter((channel) => {
+          return (
+            channel &&
+            (channel.type === 4 ||
+              (channel.isTextBased() && !channel.isThread()))
+          );
+        })
+        .map((channel) => ({
+          id: channel.id,
+          name: channel.name,
+          type: channel.type,
+          parentId: channel.parentId,
+        }));
+
+      res.json(availableChannels);
+    } catch (error) {
+      console.error("Discord channel loading error:", error);
+      res.status(500).json({
+        error: "Could not load channels from this server.",
+      });
+    }
+  }
+);
     res.json(
       manageableGuilds.map((guild) => ({
         id: guild.id,
