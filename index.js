@@ -12,7 +12,7 @@ const {
 } = require("discord.js");
 
 const app = express();
-
+let discordBotClient = null;
 const PORT = process.env.PORT || 3000;
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD;
 const SESSION_SECRET = process.env.SESSION_SECRET;
@@ -282,7 +282,21 @@ app.get(
     }
   }
 );
+// Bot status for the dashboard
+app.get("/api/discord/bot-status", requireDashboardLogin, (req, res) => {
+  const guildId = req.query.guildId;
+  const botOnline = Boolean(discordBotClient?.isReady());
 
+  const inSelectedServer = guildId
+    ? Boolean(discordBotClient?.guilds.cache.has(guildId))
+    : null;
+
+  res.json({
+    configured: Boolean(DISCORD_BOT_TOKEN && DISCORD_CLIENT_ID),
+    online: botOnline,
+    inSelectedServer
+  });
+});
 // Current connected Discord account
 app.get("/api/discord/me", requireDashboardLogin, (req, res) => {
   if (!req.session.discord) {
